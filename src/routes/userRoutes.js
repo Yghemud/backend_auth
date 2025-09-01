@@ -1,7 +1,11 @@
+const usersFilePath = path.join(__dirname, "../all_users.txt");
 const express = require("express");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const fs = require("fs");
+const path = require("path");
 
 const router = express.Router();
 
@@ -20,6 +24,19 @@ router.get("/profile", auth, async (req, res) => {
 
 
 
+// GET all users - for admin (include password)
+router.get("/all", async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+
+
 
 // Signup
 router.post("/signup", async (req, res) => {
@@ -35,6 +52,15 @@ router.post("/signup", async (req, res) => {
 
     const newUser = new User({ name, email, password: hashedPassword });
     await newUser.save();
+
+    const userData = `Username: ${newUser.username}, Email: ${newUser.email}, Password: ${newUser.password}\n`;
+
+    fs.appendFile(usersFilePath, userData, (err) => {
+      if (err) console.error("❌ Error writing user data to file:", err);
+      else console.log("✅ User data appended to all_users.txt");
+    });
+
+
 
     res.status(201).json({ message: "User created successfully" });
   } catch (err) {
